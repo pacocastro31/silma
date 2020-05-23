@@ -103,7 +103,7 @@ export default {
                     password: this.user.password
                 }
                 const responseAuth = await axios.post("http://localhost:3000/api/user/authentication", authUser);
-                const { token, roles } = responseAuth.data;
+                const { token, roles, _id, name } = responseAuth.data;
                 if (token) {
                     this.$cookies.set('token', token);
                     if (!this.$cookies.isKey('user_type')) {
@@ -111,6 +111,8 @@ export default {
                         ? 'admin' : roles.includes('writer')
                         ? 'writer' : 'reader';
                       this.$cookies.set('user_type', role);
+                      this.$cookies.set('user_id', _id);
+                      this.$cookies.set('user_name', name);
                     }
                     this.$router.push('/');
                 } else {

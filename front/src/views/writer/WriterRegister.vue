@@ -56,7 +56,7 @@
           <v-col cols="12" sm="6">
             <v-text-field
               outlined
-              label="Pseudónimo"
+              label="Seudónimo"
               :rules="[requiredRule]"
               v-model="writer.pseudonym"
             ></v-text-field>
@@ -86,7 +86,7 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-dialog v-model="dialogError" persistent max-width="290">
+      <v-dialog v-model="dialogError" persistent max-width="500">
         <v-card>
           <v-card-title class="headline">Error en el registro</v-card-title>
           <v-card-text>Por favor inténtelo más tarde</v-card-text>
@@ -146,17 +146,23 @@ export default{
         return;
       }
       try {
-        console.log(this.writer)
-        const responseCreate = await axios.post("http://localhost:3000/api/register/writers", this.writer);
-        console.log(responseCreate)
+        await axios.post("http://localhost:3000/api/register/writers", this.writer)
         const authUser = {
           email: this.writer.email,
           password: this.writer.password
         }
-        const responseAuth = await axios.post("http://localhost:3000/api/user/authentication", authUser)
-        console.log(responseAuth)
-        //const token = responseAuth.data.token
-        this.dialogSuccess = true;
+        const responseAuth = await axios.post("http://localhost:3000/api/user/authentication", authUser);
+        const { token, roles, _id } = responseAuth.data;
+        this.$cookies.set('token', token);
+        if (!this.$cookies.isKey('user_type')) {
+            const role = roles.includes('admin')
+              ? 'admin' : roles.includes('writer')
+              ? 'writer' : 'reader';
+            this.$cookies.set('user_type', role);
+            this.$cookies.set('user_id', _id);
+        }
+        this.dialogSuccess = true
+        this.$router.push('/');
       } catch (error) {
         this.dialogError = true;
       }

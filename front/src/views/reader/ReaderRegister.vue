@@ -60,10 +60,23 @@
             ></v-text-field>
           </v-col>
       </v-layout>
+      <v-layout row wrap>
+          <v-col cols="12" sm="4">
+            <v-select
+                outlined
+                label="Nacionalidad"
+                :items="countries"
+                dense
+                :rules="[requiredRule]"
+                v-model="reader.nationality"
+            ></v-select>
+            </v-col>
+      </v-layout>
       <h2 class="primary--text">Datos para Silma</h2>
       <v-layout row wrap>
         <v-col cols="12" sm="6" md="3">
           <v-select
+            v-model="reader.recommended"
             outlined
             label='¿Quién te recomendo Silma?'
             :items="administrators"
@@ -98,6 +111,7 @@
               label="Desde"
               icon="event"
               :rules="[requiredRule]"
+              v-model="reader.readFrom"
           />
         </v-col>
         <v-col cols="12" sm="6">
@@ -105,6 +119,7 @@
               label="Hasta"
               icon="event"
               :rules="[requiredRule]"
+              v-model="reader.readTill"
           />
         </v-col>
       </v-layout>
@@ -112,11 +127,12 @@
         <v-col cols="12" sm="12">
         <h2 class="primary--text">Preferencias de textos</h2>
         </v-col>
-        <v-col cols="12" sm="3" v-for="genres in genres" :key="genres">
+        <v-col cols="12" sm="3" v-for="genres in genres" :key="genres.name">
             <v-switch
-              :label="genres"
+              v-model="preferencesNames"
+              :label="genres.name"
               color="success"
-              value="success"
+              :value="genres.name"
             ></v-switch>
         </v-col>
       </v-layout>
@@ -132,10 +148,10 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-dialog v-model="dialogError" persistent max-width="290">
+      <v-dialog v-model="dialogError" persistent max-width="500">
         <v-card>
-          <v-card-title class="headline">Error en el registro</v-card-title>
-          <v-card-text>Por favor inténtelo más tarde</v-card-text>
+          <v-card-title class="headline">{{errorMessage.title}}</v-card-title>
+          <v-card-text>{{errorMessage.message}}</v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn color="red darken-1" text @click="dialogError = false">Entendido</v-btn>
@@ -155,10 +171,10 @@
 <script>
 import axios from 'axios';
 import TimestampDateField from '@/components/timestampDate.vue';
-import {genres, administrators} from '@/utils/constants.js';
+import {administrators, countries, errorServerRegister, errorPreferencesMinimun} from '@/utils/constants.js';
 import {requiredRule, emailRule, numericRule, facebookRule, passwordMinRule, phoneRule} from '@/utils/rules';
 
-export default{
+export default {
   components: {
     TimestampDateField
   },
@@ -171,16 +187,23 @@ export default{
         password:'',
         facebookLink:'',
         birthdate:'',
-        //preferences:'',
-        //recommended:'',
+        preferences:[],
+        recommended:'',
         readingProficiency:'',
-        nationality:'mexicano',
-        //from:'',
-        //till:''
+        nationality:'',
+        readFrom:'',
+        readTill:'',
+        //lastReview:''
       },
+      errorMessage: {
+        title:'',
+        message:''
+      },
+      preferencesNames: [],
       dialogSuccess: false,
       dialogError: false,
-      genres,
+      genres: [],
+      countries,
       administrators,
       emailRule,
       requiredRule,
@@ -188,26 +211,58 @@ export default{
       facebookRule,
       passwordMinRule,
       phoneRule,
+      errorServerRegister, 
+      errorPreferencesMinimun,
       showPassword: false
-    };
+    }
+  },
+  asyncComputed: {
+      async getGenres(){
+        const responseDuplicate = await axios.get("http://localhost:3000/api/user/genres");
+        return this.genres = responseDuplicate.data
+      }
   },
   methods: {
+    preferenceId(preference){
+        for(const genre of this.genres){
+          if(preference == genre.name){
+            return genre._id
+          }
+        }
+    },
     async create() {
       if (!this.$refs.form.validate()) {
         return;
       }
       try {
-        const responseCreate = await axios.post("http://localhost:3000/api/register/readers", this.reader);
-        console.log(responseCreate)
+        if(this.preferencesNames.length < 3){
+          this.errorMessage = this.errorPreferencesMinimun
+          this.dialogError = true
+          return
+        }
+        for (const preference of this.preferencesNames){
+            this.reader.preferences.push(this.preferenceId(preference))
+        }
+        console.log(this.reader.preferences)
+        await axios.post("http://localhost:3000/api/register/readers", this.reader);
         const authUser = {
           email: this.reader.email,
           password: this.reader.password
         }
-        const responseAuth = await axios.post("http://localhost:3000/api/user/authentication", authUser)
-        console.log(responseAuth)
-        //const token = responseAuth.data.token
+        const responseAuth = await axios.post("http://localhost:3000/api/user/authentication", authUser);
+        const { token, roles, _id } = responseAuth.data;
+        this.$cookies.set('token', token);
+        if (!this.$cookies.isKey('user_type')) {
+            const role = roles.includes('admin')
+              ? 'admin' : roles.includes('writer')
+              ? 'writer' : 'reader';
+            this.$cookies.set('user_type', role);
+            this.$cookies.set('user_id', _id);
+        }
         this.dialogSuccess = true
       } catch (error) {
+        console.log(error.response.data)
+        this.errorMessage = this.errorServerRegister
         this.dialogError = true
       }
     }

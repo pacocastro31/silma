@@ -3,9 +3,16 @@ import VueRouter from "vue-router";
 import RegisterReader from "@/views/reader/ReaderRegister.vue";
 import RegisterWriter from "@/views/writer/WriterRegister.vue";
 import LogIn from "@/views/login/LogIn.vue";
+<<<<<<< HEAD
 import Dashboard from "@/views/dashboards/DashboardWriter.vue";
 import TextRegister from "@/views/writer/TextRegister.vue";
+=======
+import Dashboard from "@/views/dashboards/Dashboard.vue";
+>>>>>>> 98da2a378369edebacd9dd2ca238571ed1830c4f
 import PageNotFound from "@/views/PageNotFound.vue";
+import Genres from "@/views/admins/Genres.vue";
+import TextRegister from "@/views/writer/TextRegister.vue";
+
 
 Vue.use(VueRouter);
 
@@ -31,11 +38,27 @@ const routes = [
     component: TextRegister,
     meta: {
       requiresAuth: true,
+<<<<<<< HEAD
       withAccess: ["admin","writer"]
+=======
+      withAccess: ["writer"]
+>>>>>>> 98da2a378369edebacd9dd2ca238571ed1830c4f
       // NOTE: Use 'withAccess' for pages that can only be accessed by certain users.
     }
   },
   {
+<<<<<<< HEAD
+=======
+    path: "/Generos",
+    name: 'Genres',
+    component: Genres,
+    meta: {
+      requiresAuth: true,
+      withAccess: ["admin"]
+    }
+  },
+  {
+>>>>>>> 98da2a378369edebacd9dd2ca238571ed1830c4f
     path: "/",
     name: 'Dashboard',
     component: Dashboard,

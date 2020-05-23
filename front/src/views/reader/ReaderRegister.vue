@@ -260,6 +260,7 @@ export default {
             this.$cookies.set('user_id', _id);
         }
         this.dialogSuccess = true
+        this.$router.push('/');
       } catch (error) {
         console.log(error.response.data)
         this.errorMessage = this.errorServerRegister
